@@ -1,5 +1,6 @@
-// 聲音：有音檔就播音檔，沒有就用裝置內建的台灣中文語音合成
+// 聲音的優先順序：家長的錄音 → audio/ 資料夾的音檔 → 裝置內建的台灣中文語音合成
 import { AUDIO_FILES, SYMBOLS, TONE_MARKS } from './data.js';
+import * as recordings from './recordings.js';
 
 const available = new Set(AUDIO_FILES);
 let voice = null;
@@ -61,9 +62,10 @@ function speak(text, rate = 0.8) {
   });
 }
 
-function playFile(name) {
+export function playUrl(src) {
+  stop();
   return new Promise((resolve) => {
-    const a = new Audio(`audio/${name}.mp3`);
+    const a = new Audio(src);
     current = a;
     a.onended = resolve;
     a.onerror = resolve;
@@ -73,18 +75,28 @@ function playFile(name) {
 
 async function play(fileName, text, rate) {
   stop();
-  if (available.has(fileName)) return playFile(fileName);
+  const recorded = recordings.urlFor(fileName);
+  if (recorded) return playUrl(recorded);
+  if (available.has(fileName)) return playUrl(`audio/${fileName}.mp3`);
   return speak(text, rate);
 }
 
+export const symbolKey = (sym) => `sym-${SYMBOLS[sym].id}`;
+export const syllableKey = (syl, tone) =>
+  `syl-${SYMBOLS[syl.initial].id}${SYMBOLS[syl.final].id}${tone + 1}`;
+
+// 試聽用：不管有沒有錄音，都用語音合成唸
+export function speakFallback(text) {
+  stop();
+  return speak(text, 0.7);
+}
+
 export function playSymbol(sym) {
-  const s = SYMBOLS[sym];
-  return play(`sym-${s.id}`, s.say, 0.7);
+  return play(symbolKey(sym), SYMBOLS[sym].say, 0.7);
 }
 
 export function playSyllable(syl, tone) {
-  const name = `syl-${SYMBOLS[syl.initial].id}${SYMBOLS[syl.final].id}${tone + 1}`;
-  return play(name, syl.tones[tone], 0.7);
+  return play(syllableKey(syl, tone), syl.tones[tone], 0.7);
 }
 
 export function syllableText(syl, tone) {

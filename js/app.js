@@ -1,6 +1,10 @@
 import { SYMBOLS, SYLLABLES, TONE_MARKS, TONE_NAMES, LEVELS, AVATARS, STICKERS } from './data.js';
-import { unlockAudio, playSymbol, playSyllable, syllableText, say, stop } from './audio.js';
+import {
+  unlockAudio, playSymbol, playSyllable, syllableText, say, stop,
+  playUrl, speakFallback, symbolKey, syllableKey,
+} from './audio.js';
 import * as store from './store.js';
+import * as recordings from './recordings.js';
 import { LINLIN_SVG } from './linlin.js';
 
 const app = document.getElementById('app');
@@ -737,10 +741,17 @@ function showParent() {
               .join('')}
           </div>
         </section>
+        <section class="report">
+          <h3>發音錄音</h3>
+          <p class="muted">用你的聲音取代語音合成。已錄 ${recordings.count()} / ${recordItems().length} 個。</p>
+          <div class="limit-row">
+            <button class="small-btn" data-act="recs">🎙️ 錄音 / 上傳</button>
+          </div>
+        </section>
         ${st.profiles.map(profileReport).join('') || '<p class="muted">還沒有小朋友，回上一頁按＋新增</p>'}
         <section class="report">
           <h3>備份進度</h3>
-          <p class="muted">進度只存在這台平板上。清除 Safari 資料前，請先匯出備份。</p>
+          <p class="muted">進度和錄音只存在這台平板上。清除 Safari 資料前，請先匯出備份。</p>
           <div class="limit-row">
             <button class="small-btn" data-act="export">⬇️ 匯出</button>
             <button class="small-btn" data-act="import">⬆️ 匯入</button>
@@ -751,6 +762,7 @@ function showParent() {
     </main>`,
     {
       back: () => showProfiles(),
+      recs: () => showRecordings(),
       limit: (m) => {
         store.setLimit(Number(m));
         showParent();
@@ -762,8 +774,10 @@ function showParent() {
           showParent();
         }
       },
-      export: () => {
-        const blob = new Blob([store.exportData()], { type: 'application/json' });
+      export: async () => {
+        const data = JSON.parse(store.exportData());
+        data.recordings = await recordings.exportAll();
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `潾潾學注音-備份-${store.today()}.json`;
@@ -776,7 +790,11 @@ function showParent() {
           const file = input.files[0];
           if (!file) return;
           try {
-            store.importData(await file.text());
+            const data = JSON.parse(await file.text());
+            const recs = data.recordings;
+            delete data.recordings;
+            store.importData(JSON.stringify(data));
+            await recordings.importAll(recs);
             alert('匯入成功！');
             showParent();
           } catch {
@@ -789,9 +807,133 @@ function showParent() {
   );
 }
 
+// ---------- 發音錄音 ----------
+
+// 要錄的項目：這一關的符號，加上所有有字的兩拼音節
+function recordItems() {
+  const items = level.symbols.map((s) => ({
+    key: symbolKey(s),
+    label: s,
+    hint: `像「${SYMBOLS[s].say}」`,
+    fallback: SYMBOLS[s].say,
+    group: '單一符號',
+  }));
+  syllables.forEach((syl) =>
+    syl.tones.forEach((ch, t) => {
+      if (!ch) return;
+      items.push({
+        key: syllableKey(syl, t),
+        label: syllableText(syl, t),
+        hint: `「${ch}」`,
+        fallback: ch,
+        group: '兩拼音節',
+      });
+    })
+  );
+  return items;
+}
+
+const MAX_RECORD_MS = 4000;
+
+function showRecordings() {
+  const items = recordItems();
+  let recordingKey = null;
+  let autoStop = null;
+  const scrollY = window.scrollY;
+
+  const row = (it) => {
+    const has = recordings.has(it.key);
+    return `<div class="rec-row ${has ? 'has' : ''}">
+      <div class="rec-label"><b>${it.label}</b><span>${it.hint}</span></div>
+      <span class="rec-status">${has ? '✅ 已錄' : '語音合成'}</span>
+      <div class="rec-btns">
+        <button class="small-btn rec-btn" data-act="rec:${it.key}">🎙️ 錄音</button>
+        <button class="small-btn" data-act="upload:${it.key}">📁 上傳</button>
+        <button class="small-btn" data-act="play:${it.key}" aria-label="試聽">▶️</button>
+        ${has ? `<button class="small-btn danger" data-act="del:${it.key}" aria-label="刪除">🗑</button>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const groups = [...new Set(items.map((i) => i.group))]
+    .map(
+      (g) => `<section class="report"><h3>${g}</h3>
+        ${items.filter((i) => i.group === g).map(row).join('')}</section>`
+    )
+    .join('');
+
+  render(
+    `<main class="screen parent">
+      ${topBarSimple('發音錄音', 'back')}
+      <div class="parent-body">
+        <section class="report">
+          <p>每個音可以<b>直接錄音</b>（再按一次停止，最多 4 秒），或<b>上傳</b>已經錄好的檔案（例如語音備忘錄）。</p>
+          <p class="muted">每個音只唸一次、唸清楚。沒有錄的音會繼續用語音合成。</p>
+          ${recordings.canRecord() ? '' : '<p class="warn">這個瀏覽器不支援錄音，請用「上傳」。</p>'}
+        </section>
+        ${groups}
+      </div>
+      <input type="file" id="audioFile" accept="audio/*,.m4a,.mp3,.wav,.aac" hidden>
+    </main>`,
+    {
+      back: () => showParent(),
+      play: (key) => {
+        const url = recordings.urlFor(key);
+        if (url) playUrl(url);
+        else speakFallback(items.find((i) => i.key === key).fallback);
+      },
+      del: async (key) => {
+        if (!confirm('確定要刪除這個錄音嗎？')) return;
+        await recordings.remove(key);
+        showRecordings();
+      },
+      upload: (key) => {
+        const input = document.getElementById('audioFile');
+        input.value = '';
+        input.onchange = async () => {
+          const file = input.files[0];
+          if (!file) return;
+          await recordings.save(key, file);
+          showRecordings();
+          playUrl(recordings.urlFor(key));
+        };
+        input.click();
+      },
+      rec: async (key, el) => {
+        // 正在錄別的音時，先把那一個停下來
+        if (recordingKey) return finishRecording();
+        try {
+          stop();
+          await recordings.startRecording();
+        } catch {
+          alert('沒辦法使用麥克風。請到「設定 → Safari → 麥克風」允許使用，或改用上傳。');
+          return;
+        }
+        recordingKey = key;
+        el.classList.add('recording');
+        el.textContent = '⏹ 停止';
+        autoStop = setTimeout(finishRecording, MAX_RECORD_MS);
+      },
+    }
+  );
+  window.scrollTo(0, scrollY);
+
+  async function finishRecording() {
+    clearTimeout(autoStop);
+    const key = recordingKey;
+    const blob = await recordings.stopRecording();
+    recordingKey = null;
+    if (blob) {
+      await recordings.save(key, blob);
+      showRecordings();
+      playUrl(recordings.urlFor(key));
+    } else showRecordings();
+  }
+}
+
 // ---------- 啟動 ----------
 
-showStart();
+recordings.loadAll().finally(showStart);
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});

@@ -21,7 +21,7 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: linear-gradient(180deg, var(--bg2), var(--bg));
+  background: linear-gradient(180deg, var(--bg2), var(--bg) 800px) var(--bg);
   color: var(--ink);
   overscroll-behavior: none;
   -webkit-user-select: none;
@@ -304,3 +304,19 @@ button:disabled { cursor: default; }
 @media (orientation: portrait) {
   .quiz-body, .home-body, .learn-body { flex-direction: column; }
 }
+
+/* ---------- 發音錄音 ---------- */
+.rec-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 0; border-top: 1px solid #f0e4d2;
+}
+.rec-row:first-of-type { border-top: none; }
+.rec-label { display: flex; flex-direction: column; min-width: 96px; }
+.rec-label b { font-size: 30px; line-height: 1.1; }
+.rec-label span { font-size: 14px; color: var(--muted); }
+.rec-status { font-size: 15px; color: var(--muted); min-width: 72px; }
+.rec-row.has .rec-status { color: #2e8b57; }
+.rec-btns { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.rec-btns .small-btn.danger { font-size: 18px; padding: 10px 14px; margin-left: 0; }
+.rec-btn.recording { background: var(--bad); color: #fff; border-color: var(--bad); animation: pulse 1s ease-in-out infinite; }
+.warn { color: #c0392b; }
