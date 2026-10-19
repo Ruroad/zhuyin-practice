@@ -1,0 +1,15 @@
+{
+  "name": "潾潾學注音",
+  "short_name": "潾潾學注音",
+  "description": "給準備上小學的小朋友練習注音符號",
+  "lang": "zh-Hant-TW",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff6df",
+  "theme_color": "#ffe9b8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
