@@ -1,5 +1,5 @@
 // 離線快取。新增檔案時，記得加進 FILES，並把 VERSION 加一。
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `linlin-${VERSION}`;
 const FILES = [
   './',
@@ -15,6 +15,29 @@ const FILES = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',
+  'audio/syl-ba1.mp3',
+  'audio/syl-ba4.mp3',
+  'audio/syl-bo1.mp3',
+  'audio/syl-bo2.mp3',
+  'audio/syl-fa1.mp3',
+  'audio/syl-fa3.mp3',
+  'audio/syl-ma1.mp3',
+  'audio/syl-ma2.mp3',
+  'audio/syl-ma3.mp3',
+  'audio/syl-ma4.mp3',
+  'audio/syl-mo1.mp3',
+  'audio/syl-mo2.mp3',
+  'audio/syl-pa2.mp3',
+  'audio/syl-pa4.mp3',
+  'audio/syl-po1.mp3',
+  'audio/syl-po2.mp3',
+  'audio/syl-po4.mp3',
+  'audio/sym-a.mp3',
+  'audio/sym-b.mp3',
+  'audio/sym-e.mp3',
+  'audio/sym-m.mp3',
+  'audio/sym-o.mp3',
+  'audio/sym-p.mp3',
 ];
 
 self.addEventListener('install', (e) => {

@@ -1,7 +1,7 @@
 import { SYMBOLS, SYLLABLES, TONE_MARKS, TONE_NAMES, LEVELS, AVATARS, STICKERS } from './data.js';
 import {
   unlockAudio, playSymbol, playSyllable, syllableText, say, stop,
-  playUrl, speakFallback, symbolKey, syllableKey,
+  playUrl, playKey, hasBuiltin, symbolKey, syllableKey,
 } from './audio.js';
 import * as store from './store.js';
 import * as recordings from './recordings.js';
@@ -843,9 +843,10 @@ function showRecordings() {
 
   const row = (it) => {
     const has = recordings.has(it.key);
-    return `<div class="rec-row ${has ? 'has' : ''}">
+    const status = has ? '✅ 已錄' : hasBuiltin(it.key) ? '🔈 內建音檔' : '⚠️ 語音合成';
+    return `<div class="rec-row ${has ? 'has' : hasBuiltin(it.key) ? 'builtin' : 'tts'}">
       <div class="rec-label"><b>${it.label}</b><span>${it.hint}</span></div>
-      <span class="rec-status">${has ? '✅ 已錄' : '語音合成'}</span>
+      <span class="rec-status">${status}</span>
       <div class="rec-btns">
         <button class="small-btn rec-btn" data-act="rec:${it.key}">🎙️ 錄音</button>
         <button class="small-btn" data-act="upload:${it.key}">📁 上傳</button>
@@ -868,7 +869,7 @@ function showRecordings() {
       <div class="parent-body">
         <section class="report">
           <p>每個音可以<b>直接錄音</b>（再按一次停止，最多 4 秒），或<b>上傳</b>已經錄好的檔案（例如語音備忘錄）。</p>
-          <p class="muted">每個音只唸一次、唸清楚。沒有錄的音會繼續用語音合成。</p>
+          <p class="muted">每個音只唸一次、唸清楚。你錄的聲音會優先使用；沒錄的會用「🔈 內建音檔」，沒有內建音檔的用「⚠️ 語音合成」（比較不準，建議優先錄這些）。</p>
           ${recordings.canRecord() ? '' : '<p class="warn">這個瀏覽器不支援錄音，請用「上傳」。</p>'}
         </section>
         ${groups}
@@ -877,11 +878,7 @@ function showRecordings() {
     </main>`,
     {
       back: () => showParent(),
-      play: (key) => {
-        const url = recordings.urlFor(key);
-        if (url) playUrl(url);
-        else speakFallback(items.find((i) => i.key === key).fallback);
-      },
+      play: (key) => playKey(key, items.find((i) => i.key === key).fallback),
       del: async (key) => {
         if (!confirm('確定要刪除這個錄音嗎？')) return;
         await recordings.remove(key);

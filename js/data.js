@@ -38,8 +38,32 @@ export const LEVELS = [
 ];
 
 // 已放進 audio/ 資料夾的音檔（不含副檔名）。放了新檔案就加進來。
-// 例如：'sym-b', 'syl-ba1'
-export const AUDIO_FILES = [];
+// 目前的檔案由離線語音模型生成，見 audio/README.md
+export const AUDIO_FILES = [
+  'syl-ba1',
+  'syl-ba4',
+  'syl-bo1',
+  'syl-bo2',
+  'syl-fa1',
+  'syl-fa3',
+  'syl-ma1',
+  'syl-ma2',
+  'syl-ma3',
+  'syl-ma4',
+  'syl-mo1',
+  'syl-mo2',
+  'syl-pa2',
+  'syl-pa4',
+  'syl-po1',
+  'syl-po2',
+  'syl-po4',
+  'sym-a',
+  'sym-b',
+  'sym-e',
+  'sym-m',
+  'sym-o',
+  'sym-p',
+];
 
 export const AVATARS = ['🐣', '🐰', '🐼', '🦊', '🐸', '🐯', '🐨', '🦁'];
 

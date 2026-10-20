@@ -320,3 +320,5 @@ button:disabled { cursor: default; }
 .rec-btns .small-btn.danger { font-size: 18px; padding: 10px 14px; margin-left: 0; }
 .rec-btn.recording { background: var(--bad); color: #fff; border-color: var(--bad); animation: pulse 1s ease-in-out infinite; }
 .warn { color: #c0392b; }
+.rec-row.builtin .rec-status { color: #3b7dd8; }
+.rec-row.tts .rec-status { color: #c77700; }

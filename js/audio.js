@@ -85,11 +85,10 @@ export const symbolKey = (sym) => `sym-${SYMBOLS[sym].id}`;
 export const syllableKey = (syl, tone) =>
   `syl-${SYMBOLS[syl.initial].id}${SYMBOLS[syl.final].id}${tone + 1}`;
 
-// 試聽用：不管有沒有錄音，都用語音合成唸
-export function speakFallback(text) {
-  stop();
-  return speak(text, 0.7);
-}
+export const hasBuiltin = (key) => available.has(key);
+
+// 試聽用：照正常的優先順序播放
+export const playKey = (key, fallbackText) => play(key, fallbackText, 0.7);
 
 export function playSymbol(sym) {
   return play(symbolKey(sym), SYMBOLS[sym].say, 0.7);
